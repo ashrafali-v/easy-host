@@ -1,0 +1,9 @@
+###
+POST http://localhost:3009/services/register
+
+Content-Type: application/json
+
+{
+   "githubRepoUrl":"https://github.com/ashrafali-v/simple-express-app.git"
+}
+
