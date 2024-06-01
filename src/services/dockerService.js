@@ -6,23 +6,16 @@ const fs = require('fs-extra');
 const path = require('path');
 const tar = require('tar-fs');
 
-
-const REPO_URL = 'https://github.com/ashrafali-v/simple-express-app.git'; // Replace with your GitHub repo URL
-const IMAGE_NAME = 'my-node-app-ash';
-const TARGET_DIR = path.resolve(__dirname, '..', '..','..','docker-cloned-project');
-
 const git = simpleGit();
 const docker = new Docker();
-const serviceUrl = 'http://localhost:3005'
 
 const createContainer = async(githubRepoUrl) => {
-  console.log(githubRepoUrl);
-  const CONTAINER_NAME = 'my-test-app44';
-  //const REPO_URL = githubRepoUrl;
-  console.log(REPO_URL);
+  const IMAGE_NAME = githubRepoUrl.split('/')[4].split('.')[0]
+  const CONTAINER_NAME = `my-${IMAGE_NAME}`;
+  const TARGET_DIR = path.resolve(__dirname, '..', '..', '..', IMAGE_NAME);
 
     try {
-      await git.clone(REPO_URL,TARGET_DIR);
+      await git.clone(githubRepoUrl,TARGET_DIR);
       process.chdir(TARGET_DIR);
       const dockerfileContent = `
         # Use an official Node.js runtime as a parent image
@@ -50,16 +43,14 @@ const createContainer = async(githubRepoUrl) => {
       console.log('Creating Dockerfile Success...');
 
       // Build Docker image from a Dockerfile
-      function buildImage(imageName, dockerfilePath, contextPath) {
+      function buildImage(imageName) {
+        console.log('start build');
         return new Promise((resolve, reject) => {
-          //const tarStream = fs.createReadStream(contextPath);
-          console.log(process.cwd());
           docker.buildImage(tarStream, { t: imageName },(error, stream) => {
             if (error) {
               reject(error);
               return;
             }
-
             // Log build output
             stream.pipe(process.stdout);
 
@@ -97,17 +88,15 @@ const createContainer = async(githubRepoUrl) => {
       }
 
       // Build Docker image
-      console.log('Building Docker image...');
       const tarStream = tar.pack(TARGET_DIR);
-      await buildImage(IMAGE_NAME, 'Dockerfile', TARGET_DIR);
-      console.log('Docker image built successfully');
+      await buildImage(IMAGE_NAME);
 
       // Run Docker container
-      const portMapping = { '3009/tcp': [{ HostPort: '3002' }] }; // Map container port 80 to host port 8080
-      console.log('Starting Docker container...');
+      const RANDOM_PORT = (Math.floor(Math.random() * (11001 - 10000)) + 10000).toString();
+      const portMapping = { '3009/tcp': [{ HostPort: RANDOM_PORT }] }; // Map container port 3009 to host port 3002
       const container = await runContainer(IMAGE_NAME, CONTAINER_NAME, portMapping);
-      console.log('Docker container started:', container.id);
-      return { CONTAINER_NAME, serviceUrl };
+      const serviceUrl = `http://localhost:${RANDOM_PORT}`
+      return serviceUrl;
 
     } catch (err) {
       console.error('Error:', err);

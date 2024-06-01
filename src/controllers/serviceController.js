@@ -5,8 +5,7 @@ const registerService = async (req, res) => {
   const { githubRepoUrl } = req.body;
 
   try {
-    await createContainer(githubRepoUrl);
-    //const { containerId, serviceUrl } = await createContainer(githubRepoUrl);
+    const serviceUrl = await createContainer(githubRepoUrl);
 
     // const newService = new Service({
     //   githubRepoUrl,
@@ -16,7 +15,7 @@ const registerService = async (req, res) => {
 
     //await newService.save();
 
-    res.status(201).json({ message: 'Service registered' });
+    res.status(201).json({ message: `Service registered at ${serviceUrl}` });
   } catch (error) {
     res.status(500).json({ message: 'Error registering service' });
   }
